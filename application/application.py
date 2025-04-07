@@ -53,17 +53,6 @@ def skills():
 
     return render_template("skills.html", skills=skills)
 
-
-@app.route("/portfolio")
-@cache.cached()
-def portfolio():
-    """Renders the 'Portfolio' page of the website."""
-
-    repos = get_repositories()
-
-    return render_template("portfolio.html", repos=repos)
-
-
 @app.route("/contact", methods=["GET", "POST"])
 @cache.cached()
 def contact():
