@@ -1,10 +1,8 @@
-# Helper functions
-
-import requests
-import json
 import os
-
+import json
+from openai import OpenAI
 from config import TEXT_PATH
+from openai.types.chat import ChatCompletionMessageParam
 
 
 def is_active(current_path:str, nav_path:str) -> str:
@@ -61,64 +59,9 @@ def get_skills(file_path:str) -> tuple:
         print(f"ERROR! {error}.")
 
     # Storing the information based on the type of card
-    languages = [card for card in data["cards"] if card["type"] == "language"]
-    frameworks = [card for card in data["cards"] if card["type"] in ["library", "framework"]]
-    technologies = [card for card in data["cards"] if card["type"] == "technology"]
-
-    return languages, frameworks, technologies
-
-
-def get_repositories() -> list:
-    """Returns a list of dictionaries which contains information about each public repository on my GitHub profile."""
-
-    github_token = os.environ["GITHUB_ACCESS"]
-
-    url = "https://api.github.com/users/geogeolo/repos"
-    params = {"per_page": 1000}
-    headers = {"Authorization": f"token {github_token}"}
-
-    try:
-        response = requests.get(url, params=params, headers=headers)
-
-        if response.status_code == 200:
-            data = json.loads(response.text)
-
-            repo_list = []
-
-            # Iterate through each repository and add the information needed to the list
-            for repo in data:
-                # Retrieve information only for non-forked repositories
-                if not repo["fork"]:
-                    # Check for the README repository so it won't be included
-                    if "BogdanOtava" not in repo["name"]:
-                        repo_info = {}
-                        repo_info["name"] = repo["name"]
-                        repo_info["description"] = repo["description"]
-                        repo_info["url"] = repo["html_url"]
-
-                        # Get all languages used in the repository
-                        languages = repo["languages_url"]
-                        languages_response = requests.get(languages)
-                        languages_data = languages_response.json()
-                        sorted_languages = sorted(languages_data.items(), key=lambda x: x[1], reverse=True)
-
-                        # Get top three most used languages in repository
-                        top_languages = [lang[0] for lang in sorted_languages[:3]]
-                        repo_info["languages"] = top_languages
-
-                        # Add the repository dictionary to the list of repositories
-                        repo_list.append(repo_info)
-
-            return repo_list
-        else:
-            print(f"ERROR! {response.status_code} - {response.reason}.")
-    except requests.exceptions.Timeout:
-        print("Request timed out.")
-    except requests.exceptions.TooManyRedirects:
-        print("Too many redirects.")
-    except requests.exceptions.RequestException as error:
-        print(f"ERROR! {error}.")
-
+    software = [card for card in data["cards"] if card["type"] == "software"]
+  
+    return software
 
 def get_language_image(language:str) -> str:
     """Returns the image of a programming language from 'skills.json'."""
@@ -132,3 +75,33 @@ def get_language_image(language:str) -> str:
         for card in data.get("cards", []):
             if card.get("type") == "language" and card.get("title", "").lower() == language.lower():
                 return card.get("image")
+            
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def generate_text(prompt: str) -> str:
+    try:
+        messages: list[ChatCompletionMessageParam] = [
+            {
+                "role": "system",
+                "content": (
+                    "你是一名很專業的影像創作者,在剪輯以及拍攝都是以旅行居多，然後熟悉鏡位調整與剪輯節奏以幽默風趣的回答"
+                    "請用繁體中文回答使用者的問題。"
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
+        response = client.chat.completions.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini-2024-07-18"),
+            messages=messages,
+            temperature=0.7,
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        print(f"OpenAI Error: {e}")
+        return "系統錯誤，請稍後再試～"

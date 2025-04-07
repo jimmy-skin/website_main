@@ -1,6 +1,6 @@
 # Sets up the routes for all the pages
 
-from flask import Flask, render_template, request, make_response
+from flask import Flask, render_template, request, make_response, jsonify
 from flask_caching import Cache
 from config import TEMPLATES_PATH, TEXT_PATH
 from application.helpers import *
@@ -53,17 +53,6 @@ def skills():
 
     return render_template("skills.html", skills=skills)
 
-
-@app.route("/portfolio")
-@cache.cached()
-def portfolio():
-    """Renders the 'Portfolio' page of the website."""
-
-    repos = get_repositories()
-
-    return render_template("portfolio.html", repos=repos)
-
-
 @app.route("/contact", methods=["GET", "POST"])
 @cache.cached()
 def contact():
@@ -76,6 +65,23 @@ def contact():
     # User reached route via GET
     return render_template("contact.html")
 
+@app.route("/chatboat")
+@cache.cached()
+def chatboat():
+
+    # User reached route via GET
+    return render_template("chatboat.html")
+
+@app.route("/chat", methods=["POST"])
+def tt():
+    user_input = request.json.get("message", "")
+
+    if not user_input:
+        return jsonify({"error": "Empty message"}), 400
+
+    reply = generate_text(user_input)
+    
+    return jsonify({"reply": reply})
 
 @app.route("/result")
 @cache.cached()

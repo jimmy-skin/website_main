@@ -1,0 +1,132 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <!-- Inherit from 'layout.html' -->
+    {{ super() }}
+{% endblock %}
+
+{% block title %}
+    chatboat
+{% endblock %}
+
+{% block main %}
+    <!-- Background -->
+    <img src="../static/images/trianglify_background.png" class="background position-fixed w-100 h-100 top-0 start-0" loading="lazy">
+    <!-- End of Background -->
+    <!-- Main Content -->
+    <div class="chat-container">
+        <h1>聊天機器人</h1>
+        <div id="chatbox"></div>
+        <textarea id="inputBox" placeholder="請輸入你的問題..." rows="3"></textarea>
+        <button onclick="sendMessage()">發送</button>
+    </div>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        
+        .chat-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            width: 400px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #chatbox {
+            width: 100%;
+            min-height: 400px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        #inputBox {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .user {
+            color: #007bff;
+            text-align: left;
+        }
+
+        .bot {
+            color: #28a745;
+            text-align: left;
+        }
+    </style>
+
+    <script>
+        // 當用戶發送訊息時觸發
+        function sendMessage() {
+            const userInput = document.getElementById("inputBox").value;
+            
+            if (!userInput) return;
+
+            // 顯示用戶輸入的訊息
+            appendMessage('你: ' + userInput, 'user');
+
+            // 清空輸入框
+            document.getElementById("inputBox").value = '';
+
+            // 呼叫 OpenAI API 進行回答
+            fetchOpenAIResponse(userInput);
+        }
+
+        // 顯示訊息
+        function appendMessage(message, sender) {
+            var chatbox = document.getElementById("chatbox");
+            var newMessage = document.createElement("div");
+            newMessage.textContent = message;
+            newMessage.className = sender;
+            chatbox.appendChild(newMessage);
+            chatbox.scrollTop = chatbox.scrollHeight; // 滾動到最新訊息
+        }
+
+        // 連接 OpenAI API 來獲取回應
+        async function fetchOpenAIResponse(userInput) {
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: userInput }),
+                });
+
+                const data = await response.json();
+
+                // 顯示機器人的回應
+                appendMessage('機器人: ' + data.reply, 'bot');
+            } catch (error) {
+                console.error('Error fetching from OpenAI API', error);
+            }
+        }
+    </script>
+    <!-- End of Main Content -->
+{% endblock %}
