@@ -75,7 +75,8 @@ def get_language_image(language:str) -> str:
         for card in data.get("cards", []):
             if card.get("type") == "language" and card.get("title", "").lower() == language.lower():
                 return card.get("image")
-            
+
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generate_text(prompt: str) -> str:
